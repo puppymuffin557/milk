@@ -1268,6 +1268,16 @@ const addMessage = (message) => {
 
         function optimizeImage(file, maxWidth = 800, quality = 0.7) {
             return new Promise((resolve, reject) => {
+        if (file.type === 'image/gif') {
+            if (file.size > 5 * 1024 * 1024) {
+                return reject(new Error('GIF 不能超过 5MB'));
+            }
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+            return; // 跳过 canvas 压缩
+        }
                 if (file.size < 300 * 1024) {
                     const reader = new FileReader();
                     reader.onload = e => resolve(e.target.result);
