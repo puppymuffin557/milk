@@ -1,4 +1,52 @@
 (function () {
+        // ========== 彩铃功能开始 ==========
+    let ringtoneEnabled = localStorage.getItem('ringtoneEnabled') !== 'false';   // 默认开启
+    let customRingtoneData = null;   // 存储用户上传的音频base64
+    let currentRingtoneAudio = null; // 当前正在播放的 Audio 对象
+
+    // 加载用户保存的铃声
+    function loadCustomRingtone() {
+        try {
+            const saved = localStorage.getItem('customRingtoneBase64');
+            if (saved && saved.startsWith('data:audio')) {
+                customRingtoneData = saved;
+            } else {
+                // 默认使用 assets/audio/ringtone.mp3（请确认你的mp3文件确实放在这个路径）
+                customRingtoneData = null;
+            }
+        } catch(e) { console.warn('读取彩铃失败', e); }
+    }
+
+    // 播放彩铃（会停止当前已有的铃声）
+    function playRingtone() {
+        if (!ringtoneEnabled) return;
+        // 停止之前的铃声
+        if (currentRingtoneAudio) {
+            currentRingtoneAudio.pause();
+            currentRingtoneAudio = null;
+        }
+        let audioSrc = null;
+        if (customRingtoneData) {
+            audioSrc = customRingtoneData;
+        } else {
+            // 默认铃声路径（相对于 index.html 的位置）
+            audioSrc = 'assets/audio/ringtone.mp3';
+        }
+        const audio = new Audio(audioSrc);
+        audio.loop = true;         // 循环播放
+        audio.volume = 0.6;       // 适中音量
+        audio.play().catch(e => console.warn('播放彩铃失败:', e));
+        currentRingtoneAudio = audio;
+    }
+
+    // 停止彩铃
+    function stopRingtone() {
+        if (currentRingtoneAudio) {
+            currentRingtoneAudio.pause();
+            currentRingtoneAudio = null;
+        }
+    }
+    // ========== 彩铃功能结束 ==========
     'use strict';
 
     const KEY_ENABLED  = 'callFeatureEnabled';
@@ -633,6 +681,7 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
 
     function endCall() {
         if (!S.active) return;
+        stopRingtone();
         const dur = S.elapsed;
         S.active = false; S.startTime = null;
         cancelAnimationFrame(S.timerRAF);
@@ -661,6 +710,8 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
 
     function showIncomingCall() {
         if (!S.enabled || S.active) return;
+                // 播放彩铃
+        playRingtone();
         const ov = document.getElementById('call-incoming-overlay');
         if (!ov) return;
         fillAv('call-inc-avatar'); fillNm('call-inc-name');
@@ -672,6 +723,7 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
             const rejectDelay = 4000 + Math.random() * 6000;
             S.incomingTimer = setTimeout(() => {
                 if (!ov.classList.contains('visible')) return;
+                stopRingtone();   // 停止铃声
                 ov.classList.remove('visible');
                 const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
                 const partnerName = getName();
@@ -686,6 +738,7 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
             }, rejectDelay);
         } else {
             S.incomingTimer = setTimeout(() => {
+                stopRingtone();   // 停止铃声
                 if (!ov.classList.contains('visible')) return;
                 ov.classList.remove('visible');
                 const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
@@ -828,12 +881,14 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
 
     function bindEvents() {
         document.getElementById('call-inc-reject')?.addEventListener('click', () => {
+            stopRingtone();   // 停止铃声
             document.getElementById('call-incoming-overlay')?.classList.remove('visible');
             clearTimeout(S.incomingTimer);
             const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
             sendCallEvent('fa-phone-slash', `${myName}拒绝了 ${getName()} 的通话`, null);
         });
         document.getElementById('call-inc-accept')?.addEventListener('click', () => {
+            stopRingtone();   // 停止铃声
             document.getElementById('call-incoming-overlay')?.classList.remove('visible');
             clearTimeout(S.incomingTimer); startCall(true);
         });
@@ -902,6 +957,42 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
 
         const late = () => {
             injectToolbarBtn();
+                    // 绑定彩铃开关
+        const ringtoneToggle = document.getElementById('ringtone-enabled-toggle');
+        if (ringtoneToggle) {
+            ringtoneToggle.checked = ringtoneEnabled;
+            ringtoneToggle.addEventListener('change', (e) => {
+                ringtoneEnabled = e.target.checked;
+                localStorage.setItem('ringtoneEnabled', ringtoneEnabled);
+                if (!ringtoneEnabled) stopRingtone();
+            });
+        }
+
+        // 绑定上传按钮
+        const uploadBtn = document.getElementById('upload-ringtone-btn');
+        const fileInput = document.getElementById('ringtone-file-input');
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('铃声文件不能超过 2MB');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const base64 = ev.target.result;
+                    customRingtoneData = base64;
+                    localStorage.setItem('customRingtoneBase64', base64);
+                    if (typeof showNotification === 'function') showNotification('彩铃已更换', 'success');
+                };
+                reader.readAsDataURL(file);
+                fileInput.value = '';
+            });
+        }
+
+        loadCustomRingtone();   // 加载存储的铃声
             if (S.enabled) scheduleRandomCall();
             const syncCallToggle = () => {
                 const tog = document.getElementById('call-enabled-toggle');
