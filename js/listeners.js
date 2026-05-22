@@ -2475,12 +2475,24 @@ const savedCover = safeGetItem(APP_PREFIX + 'playerCover');
         showModal(addSongModal);
     }
 
+    // 修正 openAddModal 函数，移除内部嵌套定义
     function openAddModal() {
         editModeIndex = -1;
         newSongTitle.value = '';
         newSongSub.value = '';
         newSongUrl.value = '';
         modalTitleElem.innerText = "添加自定义歌曲";
+        confirmAddSongBtn.innerText = "添加播放";
+        showModal(addSongModal);
+    }
+
+    // 独立的 openAddModalWithData 函数
+    function openAddModalWithData(url, title, sub) {
+        editModeIndex = -1;           // 确保是新增模式
+        newSongTitle.value = title;
+        newSongSub.value = sub;
+        newSongUrl.value = url;
+        modalTitleElem.innerText = "添加本地歌曲";
         confirmAddSongBtn.innerText = "添加播放";
         showModal(addSongModal);
     }
@@ -2497,7 +2509,7 @@ const savedCover = safeGetItem(APP_PREFIX + 'playerCover');
         <button class="pl-icon-btn ${isSearchVisible ? 'active' : ''}" id="pl-search-toggle" title="搜索"><i class="fas fa-search"></i></button>
         <button class="pl-icon-btn" id="pl-add-btn" title="添加歌曲"><i class="fas fa-plus"></i></button>
     </div>
-    <input type="file" id="pl-import-input" accept=".json" style="display:none">
+    <input type="file" id="pl-import-input" accept=".json,application/json" style="display:none">
 `;
         playlist.appendChild(header);
 
@@ -2523,11 +2535,34 @@ const savedCover = safeGetItem(APP_PREFIX + 'playerCover');
 
         renderListContent(contentDiv);
 
-        header.querySelector('#pl-add-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openAddModal();
-            newSongTitle.focus();
-        });
+       header.querySelector('#pl-add-btn').addEventListener('click', (e) => {
+           e.stopPropagation();
+           const fileInput = document.createElement('input');
+           fileInput.type = 'file';
+           fileInput.accept = 'audio/*';  // 只显示音频文件
+           fileInput.onchange = (event) => {
+               const file = event.target.files[0];
+               if (file) {
+                   // 读取文件为 Base64
+                   const reader = new FileReader();
+                   reader.onload = (ev) => {
+                       const base64 = ev.target.result;
+                       // 默认歌名：去掉文件扩展名
+                       let defaultTitle = file.name.replace(/\.[^/.]+$/, '');
+                       // 默认艺术家：本地音乐
+                       let defaultSub = '本地音乐';
+                       // 打开模态框并预填
+                       openAddModalWithData(base64, defaultTitle, defaultSub);
+                   };
+                   reader.readAsDataURL(file);
+               } else {
+                   // 用户取消选择，则进入原手动添加模式
+                   openAddModal();
+                   newSongTitle.focus();
+               }
+           };
+           fileInput.click();
+       });
         header.querySelector('#pl-manage-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             
@@ -2560,21 +2595,21 @@ const savedCover = safeGetItem(APP_PREFIX + 'playerCover');
             if (plOptCancelBtn) plOptCancelBtn.onclick = closeOpt;
 
             if (plOptExportBtn) plOptExportBtn.onclick = () => {
-                closeOpt();
-                if (songs.length === 0) {
-                    showNotification('歌单为空，无法导出', 'warning');
-                    return;
-                }
                 const dataStr = JSON.stringify(songs, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `music-playlist-${new Date().toISOString().slice(0, 10)}.json`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showNotification('歌单导出成功', 'success');
+                const fileName = `music-playlist-${new Date().toISOString().slice(0, 10)}.json`;
+                if (typeof exportDataToMobileOrPC === 'function') {
+                    exportDataToMobileOrPC(dataStr, fileName);
+                } else {
+                    // 降级（几乎不会执行）
+                    var blob = new Blob([dataStr], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    a.click();
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+                    showNotification('导出成功', 'success');
+                }
             };
 
             if (plOptImportBtn) plOptImportBtn.onclick = () => {
@@ -3194,4 +3229,175 @@ window.exitCollapseMode = function() {
     } else {
         setTimeout(tryApply, 400);
     }
+	// ==================== Emoji 字体独立控制（全量定义在 listeners.js 中） ====================
+	const EMOJI_STORAGE_KEY = (typeof APP_PREFIX !== 'undefined' ? APP_PREFIX : 'CHAT_APP_V3_') + 'emojiSettings';
+	const EMOJI_PRESET_MAP = {
+	    apple: 'assets/fonts/AppleEmoji.ttf',
+	    whatsapp: 'assets/fonts/WhatsAppEmoji.ttf',
+	    android: 'assets/fonts/AndroidEmoji.ttf'
+	};
+	let currentEmojiStyle = 'apple';
+	let currentEmojiFontUrl = null;
+	
+	function getEmojiUnicodeRange() {
+	    return `U+1F600-1F64F, U+1F300-1F5FF, U+1F680-1F6FF, U+2600-26FF, U+2700-27BF, U+1F900-1F9FF, U+1FA70-1FAFF, U+1F1E0-1F1FF, U+1F200-1F2FF, U+1F700-1F77F, U+1F780-1F7FF, U+1F800-1F8FF, U+1F980-1F9FF, U+1FA00-1FA6F, U+1FA70-1FAFF, U+FE00-0FE0F, U+E0000-E007F`;
+	}
+	
+	async function applyEmojiFont(fontUrl, fontFamily = 'CustomEmoji') {
+	    try {
+	        const oldStyle = document.getElementById('dynamic-emoji-font-style');
+	        if (oldStyle) oldStyle.remove();
+	        if (!fontUrl) return;
+	        const style = document.createElement('style');
+	        style.id = 'dynamic-emoji-font-style';
+	        style.textContent = `
+	            @font-face {
+	                font-family: '${fontFamily}';
+	                src: url('${fontUrl}') format('truetype');
+	                font-weight: normal;
+	                font-style: normal;
+	                unicode-range: ${getEmojiUnicodeRange()};
+	            }
+	            body, div, p, span, button, input, textarea, .message, .header, .modal-content, .chat-container {
+	                font-family: '${fontFamily}', var(--font-family, 'Noto Serif SC', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif) !important;
+	            }
+	        `;
+	        document.head.appendChild(style);
+	        currentEmojiFontUrl = fontUrl;
+	        updateEmojiPreviewUI(fontFamily);
+	    } catch (e) { console.warn('Emoji 字体应用失败', e); }
+	}
+	
+	async function loadEmojiPreset(preset) {
+	    if (!EMOJI_PRESET_MAP[preset]) return;
+	    const url = EMOJI_PRESET_MAP[preset];
+	    currentEmojiStyle = preset;
+	    await applyEmojiFont(url, `PresetEmoji_${preset}`);
+	    await saveEmojiSetting({ type: preset, customDataURL: null });
+	    updateEmojiStyleLabel(preset);
+	    if (typeof showNotification === 'function') showNotification(`已切换到 ${preset} 风格`, 'success');
+	}
+	
+	async function loadCustomEmojiFont(base64Data) {
+	    if (!base64Data || !base64Data.startsWith('data:font/')) return;
+	    currentEmojiStyle = 'custom';
+	    await applyEmojiFont(base64Data, 'UserEmoji');
+	    await saveEmojiSetting({ type: 'custom', customDataURL: base64Data });
+	    updateEmojiStyleLabel('custom');
+	    if (typeof showNotification === 'function') showNotification('自定义 Emoji 字体已应用', 'success');
+	}
+	
+	async function saveEmojiSetting(setting) {
+	    try {
+	        if (typeof localforage !== 'undefined') {
+	            await localforage.setItem(EMOJI_STORAGE_KEY, setting);
+	        } else {
+	            localStorage.setItem(EMOJI_STORAGE_KEY, JSON.stringify(setting));
+	        }
+	    } catch (e) { console.warn('保存 emoji 设置失败', e); }
+	}
+	
+	async function resetEmojiToDefault() {
+	    await loadEmojiPreset('apple');
+	}
+	
+	async function restoreEmojiSetting() {
+	    try {
+	        let saved = null;
+	        if (typeof localforage !== 'undefined') {
+	            saved = await localforage.getItem(EMOJI_STORAGE_KEY);
+	        } else {
+	            const raw = localStorage.getItem(EMOJI_STORAGE_KEY);
+	            if (raw) saved = JSON.parse(raw);
+	        }
+	        if (saved) {
+	            if (saved.type === 'custom' && saved.customDataURL) {
+	                await loadCustomEmojiFont(saved.customDataURL);
+	            } else if (saved.type && EMOJI_PRESET_MAP[saved.type]) {
+	                await loadEmojiPreset(saved.type);
+	            } else {
+	                await loadEmojiPreset('apple');
+	            }
+	        } else {
+	            await loadEmojiPreset('apple');
+	        }
+	    } catch (e) {
+	        console.warn('恢复 emoji 设置失败', e);
+	        await loadEmojiPreset('apple');
+	    }
+	}
+	
+	function updateEmojiPreviewUI(fontFamily) {
+	    const previewDiv = document.getElementById('emoji-preview');
+	    if (previewDiv) {
+	        previewDiv.style.fontFamily = `'${fontFamily}', 'Apple Color Emoji', 'Segoe UI Emoji'`;
+	        previewDiv.style.display = 'none';
+	        setTimeout(() => { if (previewDiv) previewDiv.style.display = ''; }, 5);
+	    }
+	}
+	
+	function updateEmojiStyleLabel(preset) {
+	    const labelDiv = document.getElementById('emoji-style-label');
+	    if (!labelDiv) return;
+	    const map = { apple: '🍎 苹果风格', whatsapp: '💬 WhatsApp 风格', android: '🤖 Android 风格', custom: '✏️ 自定义字体' };
+	    labelDiv.textContent = '当前：' + (map[preset] || preset);
+	}
+	
+	// 绑定 UI 事件
+	function bindEmojiStyleEvents() {
+	    const presetBtns = document.querySelectorAll('.emoji-preset-btn');
+	    presetBtns.forEach(btn => {
+	        btn.addEventListener('click', async () => {
+	            const preset = btn.dataset.preset;
+	            if (preset) {
+	                await loadEmojiPreset(preset);
+	            }
+	        });
+	    });
+	    
+	    const uploadBtn = document.getElementById('upload-emoji-font-btn');
+	    const fileInput = document.getElementById('emoji-font-file-input');
+	    if (uploadBtn && fileInput) {
+	        uploadBtn.addEventListener('click', () => fileInput.click());
+	        fileInput.addEventListener('change', async (e) => {
+	            const file = e.target.files[0];
+	            if (!file) return;
+	            const MAX_SIZE = 25 * 1024 * 1024; // 25MB
+	            if (file.size > MAX_SIZE) {
+	                if (typeof showNotification === 'function')
+	                    showNotification(`字体文件不能超过 25MB，当前 ${(file.size / 1024 / 1024).toFixed(1)}MB`, 'error');
+	                return;
+	            }
+	            if (!file.name.endsWith('.ttf') && !file.name.endsWith('.otf')) {
+	                if (typeof showNotification === 'function')
+	                    showNotification('请上传 .ttf 或 .otf 文件', 'error');
+	                return;
+	            }
+	            const reader = new FileReader();
+	            reader.onload = async (ev) => {
+	                const base64 = ev.target.result;
+	                await loadCustomEmojiFont(base64);
+	            };
+	            reader.readAsDataURL(file);
+	            fileInput.value = '';
+	        });
+	    }
+	    
+	    const resetBtn = document.getElementById('reset-emoji-font-btn');
+	    if (resetBtn) {
+	        resetBtn.addEventListener('click', async () => {
+	            if (confirm('恢复默认苹果 Emoji 风格？')) {
+	                await resetEmojiToDefault();
+	            }
+	        });
+	    }
+	}
+	
+	// 页面启动时加载之前保存的 Emoji 样式
+	document.addEventListener('DOMContentLoaded', () => {
+	    setTimeout(() => {
+	        bindEmojiStyleEvents();
+	        restoreEmojiSetting();
+	    }, 300);
+	});
 })();
