@@ -19,6 +19,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+	
 
     <link rel="stylesheet" href="css/styles.css">
 
@@ -354,6 +355,7 @@
                 <button class="combo-tab-btn active" data-tab="my-sticker"><i class="fas fa-user" style="font-size:10px;"></i> 我</button>
                 <button class="combo-tab-btn" data-tab="partner-sticker"><i class="fas fa-heart" style="font-size:10px;"></i> 对方</button>
                 <button class="combo-tab-btn" data-tab="poke">拍一拍</button>
+				<button class="combo-tab-btn" data-tab="all-emoji">😀 大全 Emoji</button>
                 <div style="margin-left:auto;display:flex;align-items:center;gap:4px;">
                     <button id="sticker-add-btn" onclick="document.getElementById('my-sticker-quick-upload').click()" title="添加我的表情" style="background:var(--accent-color);border:none;cursor:pointer;padding:4px 10px;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 8px rgba(var(--accent-color-rgb),0.35);" onmouseover="this.style.opacity='0.85';this.style.transform='scale(1.05)'" onmouseout="this.style.opacity='1';this.style.transform='scale(1)'"><i class="fas fa-plus"></i> 添加</button>
                     <button onclick="window.openMyStickerSettings()" title="管理表情库" style="background:none;border:none;cursor:pointer;padding:4px 8px;color:var(--text-secondary);font-size:12px;display:flex;align-items:center;gap:3px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(var(--accent-color-rgb),0.12)';this.style.color='var(--accent-color)'" onmouseout="this.style.background='none';this.style.color='var(--text-secondary)'"><i class="fas fa-cog"></i></button>
@@ -742,6 +744,40 @@
                 <span class="font-size-label">大小:</span>
                 <input type="range" min="12" max="24" value="16" class="font-size-slider" id="font-size-slider">
                 <span class="font-size-value" id="font-size-value">16px</span>
+				<!-- Emoji 风格独立设置 -->
+				<div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+				    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+				        <i class="fas fa-smile-wink" style="color: var(--accent-color);"></i>
+				        <span style="font-weight: 600; font-size: 13px;">Emoji 风格</span>
+				        <span style="font-size: 11px; color: var(--text-secondary);">(独立于文字字体)</span>
+				    </div>
+				    
+				    <!-- 预设按钮组 -->
+				    <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+				        <button class="modal-btn modal-btn-secondary emoji-preset-btn" data-preset="apple" style="flex:1; font-size:12px;">🍎 苹果风格</button>
+				        <button class="modal-btn modal-btn-secondary emoji-preset-btn" data-preset="whatsapp" style="flex:1; font-size:12px;">💬 WhatsApp 风格</button>
+				        <button class="modal-btn modal-btn-secondary emoji-preset-btn" data-preset="android" style="flex:1; font-size:12px;">🤖 Android 风格</button>
+				    </div>
+				    
+				    <!-- 自定义上传行 -->
+				    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+				        <span style="font-size: 12px; color: var(--text-secondary); flex:1;">自定义 Emoji 字体 (.ttf/.otf)</span>
+				        <button id="upload-emoji-font-btn" class="modal-btn modal-btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+				            <i class="fas fa-upload"></i> 上传文件
+				        </button>
+				        <button id="reset-emoji-font-btn" class="modal-btn modal-btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+				            <i class="fas fa-undo"></i> 恢复默认
+				        </button>
+				    </div>
+				    <input type="file" id="emoji-font-file-input" accept=".ttf,.otf" style="display: none;">
+				    
+				    <!-- 当前风格预览 -->
+				    <div style="background: var(--primary-bg); border-radius: 10px; padding: 10px 12px; margin-top: 12px;">
+				        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">预览：</div>
+				        <div id="emoji-preview" style="font-size: 28px; letter-spacing: 4px;">😀❤️🎉✨🌟</div>
+				        <div id="emoji-style-label" style="font-size: 11px; color: var(--text-secondary);">当前：默认</div>
+				    </div>
+				</div>
             </div>
             <div style="margin-top: 10px;">
                 <label style="font-size: 12px; color: var(--text-secondary); display:block; margin-bottom:5px;">字体链接 (CSS/TTF):</label>
@@ -1178,6 +1214,25 @@
                                 <input type="checkbox" id="call-enabled-toggle" style="opacity:0;width:0;height:0;">
                                 <span class="notif-toggle-slider"></span>
                             </label>
+							 <!-- 彩铃开关（和上面通话开关完全一样的结构） -->
+							 <div class="setting-pill-row" id="ringtone-toggle-row">
+							     <span class="setting-pill-icon"><i class="fas fa-music"></i></span>
+							     <span class="setting-pill-label">彩铃 <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">对方来电时播放铃声</span></span>
+							     <label class="notif-toggle-switch" style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+							         <input type="checkbox" id="ringtone-enabled-toggle" style="opacity:0;width:0;height:0;">
+							         <span class="notif-toggle-slider"></span>
+							     </label>
+							 </div>
+							 
+							 <!-- 自定义彩铃上传（和上面结构一致，右边放按钮） -->
+							 <div class="setting-pill-row" id="ringtone-upload-row">
+							     <span class="setting-pill-icon"><i class="fas fa-upload"></i></span>
+							     <span class="setting-pill-label" style="flex:1;">自定义彩铃</span>
+							     <button id="upload-ringtone-btn" class="modal-btn modal-btn-secondary" style="padding:4px 12px;font-size:12px; white-space:nowrap;">
+							         <i class="fas fa-file-audio"></i> 选择文件
+							     </button>
+							     <input type="file" id="ringtone-file-input" accept="audio/*" style="display:none;">
+							 </div>
                         </div>
                     </div>
                 </div>
