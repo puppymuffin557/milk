@@ -1,4 +1,4 @@
-        function safeGetItem(key) {
+function safeGetItem(key) {
             try { return localStorage.getItem(key); }
             catch (e) { console.error('Error getting item:', e); return null; }
         }
@@ -66,28 +66,118 @@ function deduplicateContentArray(arr, baseSystemArray = []) {
             });
         }
 
-        function exportDataToMobileOrPC(dataString, fileName) {
-            if (navigator.share && navigator.canShare) {
-                try {
-                    const blob = new Blob([dataString], { type: 'application/json' });
-                    const file = new File([blob], fileName, { type: 'application/json' });
-                    if (navigator.canShare({ files: [file] })) {
-                        navigator.share({ files: [file], title: '传讯数据备份', text: '请选择"保存到文件"' })
-                            .catch(() => downloadFileFallback(blob, fileName));
-                        return;
+        // ========== 可靠的导出文件保存（5+ App 专用） ==========
+        function saveStringToDevice(content, fileName) {
+            return new Promise((resolve, reject) => {
+                if (typeof plus === 'undefined' || !plus.io) {
+                    reject('非 5+ 环境');
+                    return;
+                }
+                function checkPermissionAndWrite() {
+                    if (plus.android) {
+                        try {
+                            var activity = plus.android.runtimeMainActivity();
+                            var permission = 'android.permission.WRITE_EXTERNAL_STORAGE';
+                            if (activity.checkSelfPermission(permission) != 0) {
+                                activity.requestPermissions([permission], 0);
+                                setTimeout(checkPermissionAndWrite, 800);
+                                return;
+                            }
+                        } catch(e) {}
                     }
-                } catch (e) {}
-            }
-            const blob = new Blob([dataString], { type: 'application/json' });
-            downloadFileFallback(blob, fileName);
+                    var directory = plus.io.DownloadDirectory;
+                    plus.io.resolveLocalFileSystemURL(directory, function(dirEntry) {
+                        dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
+                            fileEntry.createWriter(function(writer) {
+                                writer.onwriteend = function() {
+                                    if (plus.android) {
+                                        try {
+                                            var MediaScanner = plus.android.importClass('android.media.MediaScannerConnection');
+                                            MediaScanner.scanFile(plus.android.runtimeMainActivity(), [fileEntry.fullPath], null, null);
+                                        } catch(e) {}
+                                    }
+                                    resolve();
+                                };
+                                writer.onerror = function(e) { reject(e); };
+                                var blob = new Blob([content], { type: 'application/octet-stream' });
+                                var reader = new FileReader();
+                                reader.onload = function(ev) {
+                                    writer.writeAsBinary(ev.target.result);
+                                };
+                                reader.onerror = function() { reject('读取失败'); };
+                                reader.readAsBinaryString(blob);
+                            }, reject);
+                        }, reject);
+                    }, reject);
+                }
+                checkPermissionAndWrite();
+            });
         }
 
+        function fallbackDownload(content, fileName) {
+            var blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+            showNotification('导出成功（浏览器方式）', 'success');
+        }
+
+        window.exportDataToMobileOrPC = function(dataString, fileName) {
+            if (typeof plus !== 'undefined' && plus.io) {
+                saveStringToDevice(dataString, fileName)
+                    .then(() => {
+                        showNotification('文件已保存到 Download 文件夹：' + fileName, 'success', 4000);
+                    })
+                    .catch((err) => {
+                        console.error('保存失败', err);
+                        fallbackDownload(dataString, fileName);
+                    });
+            } else {
+                fallbackDownload(dataString, fileName);
+            }
+        };
+
         function downloadFileFallback(blob, fileName) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url; link.download = fileName; link.style.display = 'none';
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            if (typeof plus !== 'undefined' && plus.io) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    saveStringToDevice(e.target.result, fileName)
+                        .then(() => {
+                            showNotification('文件已保存到 Download 文件夹：' + fileName, 'success', 4000);
+                        })
+                        .catch((err) => {
+                            console.error('保存失败', err);
+                            var url = URL.createObjectURL(blob);
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download = fileName;
+                            a.click();
+                            setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+                            showNotification('导出成功（浏览器方式）', 'success');
+                        });
+                };
+                reader.onerror = function() {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    a.click();
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+                    showNotification('导出成功（浏览器方式）', 'success');
+                };
+                reader.readAsBinaryString(blob);
+            } else {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+                showNotification('导出成功', 'success');
+            }
         }
 
         if (typeof localforage !== 'undefined') {
@@ -393,7 +483,6 @@ async function exportAllData() {
             const fileName = `chatapp-backup-${dateStr}.json`;
             const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
             downloadFileFallback(blob, fileName);
-            if (typeof showNotification === 'function') showNotification('已导出 JSON 备份', 'success');
         } else {
             showNotification('备份模块或函数未加载，请刷新页面', 'error');
         }
@@ -536,4 +625,110 @@ async function importAllData(file) {
         const msg = err && err.message ? err.message : '未知错误';
         showNotification('导入失败：' + msg, 'error', 5000);
     }
+	// ==================== Emoji 字体独立控制（全局可用） ====================
+	const EMOJI_STORAGE_KEY = APP_PREFIX + 'emojiSettings';
+	const EMOJI_PRESET_MAP = {
+	    apple: 'assets/fonts/AppleEmoji.ttf',
+	    whatsapp: 'assets/fonts/WhatsAppEmoji.ttf',
+	    android: 'assets/fonts/AndroidEmoji.ttf'
+	};
+	let currentEmojiStyle = 'apple';
+	let currentEmojiFontUrl = null;
+	
+	function getEmojiUnicodeRange() {
+	    return `U+1F600-1F64F, U+1F300-1F5FF, U+1F680-1F6FF, U+2600-26FF, U+2700-27BF, U+1F900-1F9FF, U+1FA70-1FAFF, U+1F1E0-1F1FF, U+1F200-1F2FF, U+1F700-1F77F, U+1F780-1F7FF, U+1F800-1F8FF, U+1F980-1F9FF, U+1FA00-1FA6F, U+1FA70-1FAFF, U+FE00-0FE0F, U+E0000-E007F`;
+	}
+	
+	async function applyEmojiFont(fontUrl, fontFamily = 'CustomEmoji') {
+	    try {
+	        const oldStyle = document.getElementById('dynamic-emoji-font-style');
+	        if (oldStyle) oldStyle.remove();
+	        if (!fontUrl) return;
+	        const style = document.createElement('style');
+	        style.id = 'dynamic-emoji-font-style';
+	        style.textContent = `
+	            @font-face {
+	                font-family: '${fontFamily}';
+	                src: url('${fontUrl}') format('truetype');
+	                font-weight: normal;
+	                font-style: normal;
+	                unicode-range: ${getEmojiUnicodeRange()};
+	            }
+	            body, div, p, span, button, input, textarea, .message, .header, .modal-content, .chat-container {
+	                font-family: '${fontFamily}', var(--font-family, 'Noto Serif SC', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif) !important;
+	            }
+	        `;
+	        document.head.appendChild(style);
+	        currentEmojiFontUrl = fontUrl;
+	        updateEmojiPreviewUI(fontFamily);
+	    } catch (e) { console.warn('Emoji 字体应用失败', e); }
+	}
+	
+	async function loadEmojiPreset(preset) {
+	    if (!EMOJI_PRESET_MAP[preset]) return;
+	    const url = EMOJI_PRESET_MAP[preset];
+	    currentEmojiStyle = preset;
+	    await applyEmojiFont(url, `PresetEmoji_${preset}`);
+	    await saveEmojiSetting({ type: preset, customDataURL: null });
+	    updateEmojiStyleLabel(preset);
+	}
+	
+	async function loadCustomEmojiFont(base64Data) {
+	    if (!base64Data || !base64Data.startsWith('data:font/')) return;
+	    currentEmojiStyle = 'custom';
+	    await applyEmojiFont(base64Data, 'UserEmoji');
+	    await saveEmojiSetting({ type: 'custom', customDataURL: base64Data });
+	    updateEmojiStyleLabel('custom');
+	}
+	
+	async function saveEmojiSetting(setting) {
+	    try { await localforage.setItem(EMOJI_STORAGE_KEY, setting); } 
+	    catch (e) { console.warn('保存 emoji 设置失败', e); }
+	}
+	
+	async function resetEmojiToDefault() {
+	    await loadEmojiPreset('apple');
+	}
+	
+	async function restoreEmojiSetting() {
+	    try {
+	        const saved = await localforage.getItem(EMOJI_STORAGE_KEY);
+	        if (saved) {
+	            if (saved.type === 'custom' && saved.customDataURL) {
+	                await loadCustomEmojiFont(saved.customDataURL);
+	            } else if (saved.type && EMOJI_PRESET_MAP[saved.type]) {
+	                await loadEmojiPreset(saved.type);
+	            } else {
+	                await loadEmojiPreset('apple');
+	            }
+	        } else {
+	            await loadEmojiPreset('apple');
+	        }
+	    } catch (e) {
+	        console.warn('恢复 emoji 设置失败', e);
+	        await loadEmojiPreset('apple');
+	    }
+	}
+	
+	function updateEmojiPreviewUI(fontFamily) {
+	    const previewDiv = document.getElementById('emoji-preview');
+	    if (previewDiv) {
+	        previewDiv.style.fontFamily = `'${fontFamily}', 'Apple Color Emoji', 'Segoe UI Emoji'`;
+	        previewDiv.style.display = 'none';
+	        setTimeout(() => { if (previewDiv) previewDiv.style.display = ''; }, 5);
+	    }
+	}
+	
+	function updateEmojiStyleLabel(preset) {
+	    const labelDiv = document.getElementById('emoji-style-label');
+	    if (!labelDiv) return;
+	    const map = { apple: '🍎 苹果风格', whatsapp: '💬 WhatsApp 风格', android: '🤖 Android 风格', custom: '✏️ 自定义字体' };
+	    labelDiv.textContent = '当前：' + (map[preset] || preset);
+	}
+	
+	// ---------- 挂载到全局，供 listeners.js 调用 ----------
+	window.loadEmojiPreset = loadEmojiPreset;
+	window.loadCustomEmojiFont = loadCustomEmojiFont;
+	window.resetEmojiToDefault = resetEmojiToDefault;
+	window.restoreEmojiSetting = restoreEmojiSetting;
 }
