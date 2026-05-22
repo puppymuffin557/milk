@@ -183,7 +183,7 @@
     }
 
     function applyStats(total, msgs, cfg, media) {
-        var pct = Math.min(100, total / (5 * 1024 * 1024) * 100);
+        var pct = Math.min(100, total / (500 * 1024 * 1024) * 100);
         var g = function (id) { return document.getElementById(id); };
         var bar = g('dm-storage-bar');
         if (bar) {
@@ -194,7 +194,7 @@
                 ? 'linear-gradient(90deg,#FF9F0A,#E07000)'
                 : 'linear-gradient(90deg,var(--accent-color),rgba(var(--accent-color-rgb),0.6))';
         }
-        if (g('dm-storage-total')) g('dm-storage-total').textContent = fmt(total) + ' / ~5 MB';
+        if (g('dm-storage-total')) g('dm-storage-total').textContent = fmt(total) + ' / ~500 MB';
         if (g('dm-stat-msgs'))     g('dm-stat-msgs').textContent     = fmt(msgs);
         if (g('dm-stat-settings')) g('dm-stat-settings').textContent = fmt(cfg);
         if (g('dm-stat-media'))    g('dm-stat-media').textContent    = fmt(media);
@@ -478,7 +478,7 @@ function updateStorageUsageBar() {
                 Promise.all(promises).then(function(sizes) {
                     var total   = sizes.reduce(function(a,b){return a+b;},0);
                     var usedKB  = (total / 1024).toFixed(1);
-                    var maxBytes = 5 * 1024 * 1024;
+                    var maxBytes = 500 * 1024 * 1024;
                     var pct     = Math.min(total / maxBytes * 100, 100).toFixed(1);
                     var fmt     = function(b) { return b<1024 ? b+' B' : b<1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(2)+' MB'; };
 
@@ -491,7 +491,7 @@ function updateStorageUsageBar() {
                         else
                             bar.style.background = 'linear-gradient(90deg,var(--accent-color),rgba(var(--accent-color-rgb),0.6))';
                     }
-                    if (text) text.textContent = fmt(total) + ' / ~5 MB (' + pct + '%)';
+                    if (text) text.textContent = fmt(total) + ' / ~500 MB (' + pct + '%)';
                 });
             }).catch(function() {
                 var ls = 0;
