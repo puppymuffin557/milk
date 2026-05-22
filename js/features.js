@@ -374,6 +374,9 @@ function renderComboMenu() {
         <button class="combo-tab active" data-tab="emoji" style="flex:1; padding:8px; border:none; background:var(--accent-color); color:#fff; border-radius:8px; cursor:pointer;">
             😊 表情
         </button>
+        <button class="combo-tab" data-tab="allemoji" style="flex:1; padding:8px; border:none; background:var(--secondary-bg); color:var(--text-primary); border-radius:8px; cursor:pointer;">
+            😀 大全 Emoji
+        </button>
         <button class="combo-tab" data-tab="poke" style="flex:1; padding:8px; border:none; background:var(--secondary-bg); color:var(--text-primary); border-radius:8px; cursor:pointer;">
             ✨ 拍一拍
         </button>
@@ -386,6 +389,7 @@ function renderComboMenu() {
     content.appendChild(tabBar);
     content.appendChild(contentArea);
     
+    // 显示默认标签页（表情）
     showEmojiTab();
     
     tabBar.querySelectorAll('.combo-tab').forEach(btn => {
@@ -401,13 +405,14 @@ function renderComboMenu() {
             
             if (btn.dataset.tab === 'emoji') {
                 showEmojiTab();
-            } else {
+            } else if (btn.dataset.tab === 'allemoji') {
+                showAllEmojiTab();
+            } else if (btn.dataset.tab === 'poke') {
                 showPokeTab();
             }
         });
     });
 }
-
 function showEmojiTab() {
     const area = document.getElementById('combo-content-area');
     area.innerHTML = '';
@@ -471,7 +476,68 @@ function showEmojiTab() {
         area.appendChild(item);
     });
 }
+function showAllEmojiTab() {
+    const area = document.getElementById('combo-content-area');
+    if (!area) return;
+    area.innerHTML = '';
+    area.style.display = 'block';
+    area.style.padding = '0';
+    area.style.overflow = 'auto';
 
+    const rawEmojiText = `😀😃😄😁😆🥹😅😂🤣🥲☺️😊😇🙂🙃😉😌😍🥰😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😟😔😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😶‍🌫️😱😨😰😥😓🤗🤔🫣🤭🫢🫡🤫🫠🤥😶🫥😐🫤😑🫨😬🙄😯😦😧😮😲🥱😴🤤😪😮‍💨😵😵‍💫🤐🥴🤢🤮🤧😷🤒🤕🤑🤠🙂‍↕️🙂‍↔️ 🫩 🫪😈👿👹👺🤡💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾
+🫶🤲👐🏻🙌👏🤝👍👊✊🤛🤜🫷🫸🤞✌️🫰🏻🤟🤘👌🤌🤏🫳🏻🫴👈👉👆🏻👇☝️✋🤚🖐️🖖👋🤙🫲🫱💪🦾🖕✍️🙏🫵🏻🦶🦵🦿💄💋👄🫦🦷👅👂🦻👃👣👁️👀🫀🫁🧠🗣️👤👥🫂👶👧🧒👦👩🧑👨👩‍🦱🧑‍🦱👨‍🦱👩‍🦰🧑‍🦰👨‍🦰👱‍♀️👱👱‍♂️👩‍🦳🧑‍🦳👨‍🦳👩‍🦲🧑‍🦲👨‍🦲🧔‍♀️🧔🧔‍♂️👵🧓👴👲👳‍♀️👳👳‍♂️🧕👮‍♀️👮👮‍♂️👷‍♀️👷👷‍♂️💂‍♀️💂💂‍♂️🕵️‍♀️🕵️🕵️‍♂️👩‍⚕️🧑‍⚕️👨‍⚕️👩‍🌾🧑‍🌾👨‍🌾👩‍🍳🧑‍🍳👨‍🍳👩‍🎓🧑‍🎓👨‍🎓👩‍🎤🧑‍🎤👨‍🎤👩‍🏫🧑‍🏫👨‍🏫👩‍🏭🧑‍🏭👨‍🏭👩🏻‍💻🧑‍💻👨‍💻👩‍💼🧑‍💼👨‍💼👩‍🔧🧑‍🔧👨‍🔧👩‍🔬🧑‍🔬👨‍🔬👩‍🎨🧑‍🎨👨‍🎨👩‍🚒🧑‍🚒👨‍🚒👩‍✈️🧑‍✈️👨‍✈️👩‍🚀🧑‍🚀👨‍🚀👩‍⚖️🧑‍⚖️👨‍⚖️👰‍♀️👰👰‍♂️🤵‍♀️🤵🤵‍♂️👸🫅🏼🤴🥷🦸‍♀️🦸🦸‍♂️🦹‍♀️🦹🦹‍♂️🤶🧑‍🎄🎅🧙‍♀️🧙🧙‍♂️🧛🧛‍♂️🧟‍♀️🧟🧟‍♂️🧝🏻‍♀️🧝🧝‍♂️🧌🧛‍♀️🧞‍♀️🧞🧞‍♂️🧜‍♀️🧜🧜‍♂️🧚‍♀️🧚🧚‍♂️👼🤰🫄🫃🤱👩‍🍼🧑‍🍼👨🏻‍🍼🙇‍♀️🙇🙇‍♂️💁‍♀️💁💁‍♂️🙅‍♀️🙅🙅‍♂️🙆‍♀️🙆🙆‍♂️🙋‍♀️🙋🙋‍♂️🧏🏻‍♀️🧏🧏‍♂️🤦‍♀️🤦🤦‍♂️🤦‍♂️🤷‍♀️🤷🤷‍♂️🙎‍♀️🙎🙎‍♂️🙍‍♀️🙍🙍‍♂️💇‍♀️💇💇‍♂️💆‍♀️💆💆‍♂️🧖‍♀️🧖🧖‍♂️💅🤳💃🕺👯‍♀️👯👯‍♂️🕴️👩‍🦽🧑‍🦽👨‍🦽👩‍🦼🧑‍🦼👨‍🦼🚶‍♀️🚶🚶‍♂️👩‍🦯🧑‍🦯👨‍🦯🧎‍♀️🧎🧎‍♂️🏃‍♀️🏃🏃‍♂️🧍‍♀️🧍🧍‍♂️👫👭👬👩‍❤️‍👨👩🏻‍❤️‍👩🏻💑👨‍❤️‍👨👩‍❤️‍💋‍👨👩‍❤️‍💋‍👩💏👨‍❤️‍💋‍👨👨‍👩‍👦👨‍👩‍👧👨‍👩‍👧‍👦👨‍👩‍👦‍👦👨‍👩‍👧‍👧👩‍👩‍👦👩‍👩‍👧👩‍👩‍👧‍👦👩‍👩‍👦‍👦👩‍👩‍👧‍👧👨‍👨‍👦👨‍👨‍👧👨‍👨‍👧‍👦👨‍👨‍👦‍👦👨‍👨‍👧‍👧👩‍👦👩‍👧👩‍👧‍👦👩‍👦‍👦👩‍👧‍👧👨‍👦👨‍👧👨‍👧‍👦👨‍👦‍👦👨‍👧‍👧🪢🧶🧵🪡🧥🥼🦺👚👕👖🩲🩳👔👗👙🩱👘🥻🩴🥿👠👢👡👞👟🥾🧦🧤🧣🎩🧢👒🎓⛑️🪖👑💍👝👛💼👜🎒🧳👓🕶️🥽🌂
+🐶🐱🐭🐹🐰🦊🐻🐼🐻‍❄️🐨🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🐔🐧🐦🐤🐣🐥🪿🦆🐦‍⬛🦅🦉🦇🐺🐗🐴🦄🫎🐝🪱🐛🦋🐌🐞🐜🪰🪲🪳🦟🦗🕷️🕸️🦂🐢🐍🦎🦖🦕🐙🦑🪼🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🦭🐊🐅🐆🦓🦍🦧🦣🐘🦛🦏🐪🐫🦒🦘🦬🐃🐂🐄🫏🐎🐖🐏🐑🦙🐐🦌🐕🐩🦮🐕‍🦺🐈🐈‍⬛🪶🪽🐓🦃🦤🦚🦜🦢🦩🕊️🐇🦝🦨🦡🦫🦦🦥🐁🐀🐿️🦔 🐦‍🔥 🫈  🫍 🐾🐉🐲🌵🎄🌲🌳🌴🪵🌱🌿☘️🍀 🫜🪾🎍🪴🎋🍃🍂🍁🪺🪹🍄🍄‍🟫 🐚🪸🪨🌾💐🌷🌹🥀🪻🪷🌺🌸🌼🌻🌞🌝🌛🌜🌚🌕🌖🌗🌘🌑🌒🌓🌔🌙🌎🌍🌏🪐💫⭐️🌟✨⚡️☄️💥🔥🌪️🌈☀️🌤️⛅️🌥️☁️🌦️🌧️⛈️🌩️🌨️❄️☃️⛄️🌬️💨💧💦🫧☔️☂️🌊🌫️ 🫯
+🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍋‍🟩🍅🍆🥑🫛🥦🥬🥒🌶️🫑🌽🥕🫒🧄🧅🥔🍠🫚🥐🥯🍞🥖🥨🧀🥚🍳🧈🥞🧇🥓🥩🍗🍖🦴🌭🍔🍟🍕🫓🥪🥙🧆🌮🌯🫔🥗🥘🫕🥫🫙🍝🍜🍲🍛🍣🍱🥟🦪🍤🍙🍚🍘🍥🥠🥮🍢🍡🍧🍨🍦🥧🧁🍰🎂🍮🍭🍬🍿🍫🍩🍪🌰🥜🫘🍯🥛🫗🍼🫖☕️🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🧉🍾🧊🥄🍴🍽️🥣🥡🥢🧂
+⚽️🏀🏈⚾️🥎🎾🏐🏉🥏🎱🪀🏓🏸🏒🏑🥍🏏🪃🥅⛳️🪁🛝🏹🎣🤿🥊🥋🎽🛹🛼🛷⛸️🥌🎿⛷️🏂🪂🏋️‍♀️🏋️🏋️‍♂️🤼‍♀️🤼🤼‍♂️🤸‍♀️🤸🤸‍♂️⛹️‍♀️⛹️⛹️‍♂️🤺🤾‍♀️🤾🤾‍♂️🏌️‍♀️🏌️🏌️‍♂️🏇🧘‍♀️🧘🧘‍♂️🏄‍♀️🏄🏄‍♂️🏊‍♀️🏊🏊‍♂️🤽‍♀️🤽🤽‍♂️🚣‍♀️🚣🚣‍♂️🧗‍♀️🧗🧗‍♂️🚵‍♀️🚵‍♂️🚵🚴‍♀️🚴🚴‍♂️🏆🥇🥈🥉🏅🎖️🏵️🎗️🎫🎟️🎪🤹‍♀️🤹🤹‍♂️🎭🩰🎨🎬🎤🎧🎼🎹🪇🥁🪘🎷🎺🪗🎸🪕🎻🪈 🪉 🪊🎲♟️🎯🎳🎮🎰🧩
+🚗🚕🚙🚌🚎🏎️🚓🚑🚒🚐🛻🚚🚛🚜🦯🦽🦼🩼🛴🚲🛵🏍️🛺🛞🚨🚔🚍🚘🚖🚡🚠🚟🚃🚋🚞🚝🚄🚅🚈🚂🚆🚇🚊🚉✈️🛫🛬🛩️💺🛰️🚀🛸🚁🛶⛵️🚤🛥️🛳️⛴️🚢🛟⚓️🪝⛽️🚧🚦🚥🚏🗺️🗿🗽🗼🏰🏯🏟️🗽🗼🏰🏯🏟️🎡🎢🎠⛲️⛱️🏖️🏝️🏜️🌋⛰️🏔️🗻🛘 🏕️⛺️🛖🏠🏡🏘️🏚️🏗️🏭🏢🏬🏣🏤🏥🏦🏨🏪🏫🏩💒🏛️⛪️🕌🕍🛕🕋⛩️🛤️🛣️🗾🎑🏞️🌅🌄🌠🎇🎆🌇🌆🏙️🌃🌌🌉🌁
+⌚️📱📲💻⌨️🖥️🖨️🖱️🖲️🕹️🗜️💽💾💿📀📼📷📸📹🎥📽️🎞️📞☎️📟📠📺📻🎙️🎚️🎛️🧭⏱️⏲️⏰🕰️⌛️⏳📡🔋🪫🔌💡🔦🕯️🪔🧯🛢️💸💵💴💶💷🪙💰💳🪪💎⚖️🪜🧰🪛🔧🔨⚒️🛠️⛏️🪚 🪏 🔩⚙️🪤🧱⛓️🧲🔫💣🧨🪓🔪🗡️⚔️🛡️🚬⚰️🪦⚱️🏺🔮📿🧿🪬💈⚗️🔭🔬🕳️🩻🩹🩺💊💉💉🧬🦠🧫🧪🌡️🧹🪠🧺🧻🚽🚰🚿🛁🛀🧼🪥🪒🪮🧽🪣🧴🛎️🔑🗝️🚪🪑🛋️🛏️🛌🧸🪆🖼️🪞🪟🛍️🛒🎁🎈🎏🎀🪄🪅🎊🎉🎎🪭🏮🎐🪩🧧✉️📩📨📧💌📥📤📦🏷️🪧📪📫📫📭📮📯📜📃📄📑🧾📊📈📉🗒️🗓️📆📅🗑️📇🗃️🗳️🗄️📋📁📂🗂️🗞️📰📓📔📒📕📗📘📙📚📖🔖🧷🔗📎🖇️📐📏🧮📌📍✂️🖊️🖋️✒️🖌️🖍️📝✏️✏️🔎🔏🔐🔒🔓 🪎
+🩷❤️🧡💛💚🩵💙💜🖤🩶🤍🤎💔❤️‍🔥❤️‍🩹❣️💕💞💓💗💖💘💝💟☮️✝️☪️🕉️☸️🪯✡️🔯🕎☯️☦️🛐⛎♈️♉️♊️♋️♌️♍️♎️♏️♐️♑️♒️♓️🆔⚛️🉑☢️☣️📴📳🈶🈚️🈸🈺🈷️✴️🆚💮🉐㊙️㊗️🈴🈵🈹🈲🅰️🅱️🆎🆑🅾️🆘❌⭕️🛑⛔️📛🚫💯💢♨️🚷🚯🚳🚱🔞📵🚭❗️❕❓❔‼️⁉️🔅🔆〽️⚠️🚸🔱⚜️🔰♻️✅🈯️💹❇️✳️❎🌐💠Ⓜ️🌀💤🏧🚾♿️🅿️🛗🈳🈂️🛂🛃🛄🛅🛜🚹🚺🚼⚧️🚻🚮🎦📶🈁🔣ℹ️🔤🔡🔠🆖🆗🆙🆒🆕🆓0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟🔢#️⃣*️⃣⏏️▶️⏸️⏯️⏹️⏺️⏭️⏮️⏩️⏪️⏫️⏬️◀️🔼🔽➡️⬅️⬆️⬇️↗️↘️↙️↖️↕️↔️↪️↩️⤴️⤵️🔀🔁🔂🔄🔃🎵🎶➕➖➗✖️🟰♾️💲💲™️©️®️👁️‍🗨️🔚🔙🔛🔝🔜〰️➰➿✔️☑️🔘🔴🟠🟡🟢🔵🟣⚫️⚪️🟤🔺🔺🔸🔹🔶🔷🔳🔲▪️▫️◾️◽️🟩🟦🟪⬛️⬜️🟫🔈🔇🔉🔊🔔🔕📣📢💬💭🗯️♠️♣️♥️♦️🃏🎴🀄️🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦🕧 🫆🫟
+🏳️🏴🏴‍☠️🏁🚩🏳️‍🌈🏳️‍⚧️🇺🇳🇦🇱🇩🇿🇦🇫🇦🇷🇦🇪🇦🇼🇴🇲🇦🇿🇪🇬🇪🇹🇮🇪🇪🇪🇦🇩🇦🇴🇦🇮🇦🇬🇦🇹🇦🇽🇦🇺🇲🇴🇧🇧🇵🇬🇧🇸🇵🇰🇵🇾🇵🇸🇧🇭🇵🇦🇧🇷🇧🇾🇧🇲🇧🇬🇲🇵🇲🇰🇧🇯🇧🇪🇵🇪🇮🇸🇵🇷🇵🇱🇧🇦🇧🇴🇧🇿🇧🇼🇧🇹🇧🇫🇧🇮🇮🇴🇰🇵🇬🇶🇩🇰🇩🇪🇹🇱🇹🇬🇩🇴🇩🇲🇷🇺🇪🇨🇪🇷🇫🇷🇫🇴🇵🇫🇬🇫🇹🇫🇻🇦🇵🇭🇫🇯🇫🇮🇨🇻🇫🇰🇬🇲🇨🇬🇨🇩🇨🇴🇨🇷🇬🇩🇬🇱🇬🇪🇬🇬🇨🇺🇬🇵🇬🇺🇬🇾🇰🇿🇭🇹🇰🇷🇳🇱🇧🇶🇸🇽🇲🇪🇭🇳🇰🇮🇩🇯🇰🇬🇬🇳🇬🇼🇨🇦🇬🇭🇮🇨🇬🇦🇰🇭🇨🇿🇿🇼🇨🇲🇶🇦🇰🇾🇨🇨🇰🇲🇽🇰🇨🇮🇰🇼🇭🇷🇰🇪🇨🇰🇨🇼🇱🇻🇱🇸🇱🇦🇱🇧🇱🇹🇱🇷🇱🇾🇱🇮🇷🇪🇱🇺🇷🇼🇷🇴🇲🇬🇮🇲🇲🇻🇲🇹🇲🇼🇲🇾🇲🇱🇲🇭🇲🇶🇾🇹🇲🇺🇲🇷🇺🇸🇦🇸🇻🇮🇲🇳🇲🇸🇧🇩🇫🇲🇲🇲🇳🇦🇿🇦🇦🇶🇬🇸🇸🇸🇳🇷🇳🇮🇳🇵🇳🇪🇳🇬🇳🇺🇳🇴🇳🇫🇪🇺🇵🇼🇵🇳🇵🇹🇯🇵🎌🇸🇪🇨🇭🇸🇻🇼🇸🇷🇸🇸🇱🇸🇳🇨🇾🇸🇨🇸🇦🇧🇱🇨🇽🇸🇹🇸🇭🇰🇳🇱🇨🇸🇲🇵🇲🇻🇨🇱🇰🇸🇰🇸🇮🇸🇿🇸🇩🇸🇷🇸🇧🇸🇴🇹🇯🇹🇭🇹🇿🇹🇴🇹🇨🇹🇹🇹🇳🇹🇻🇹🇷🇻🇪🇧🇳🇺🇬🇺🇦🇺🇾🇺🇿🇪🇸🇪🇭🇬🇷🇭🇰🇸🇬🇳🇨🇳🇿🇭🇺🇸🇾🇯🇲🇦🇲🇾🇪🇮🇶🇮🇷🇮🇱🇮🇹🇮🇳🇮🇩🇬🇧🏴󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁷󠁬󠁳󠁿🇻🇬🇯🇴🇻🇳🇿🇲🇯🇪🇹🇩🇬🇮🇨🇱🇨🇫🇨🇳`;
+
+    // 正则提取所有 Emoji（支持组合）
+    const emojiRegex = /\p{Emoji}(\uFE0F|\u200D[\u{1F300}-\u{1FAFF}])?/gu;
+    const emojiList = [...rawEmojiText.matchAll(emojiRegex)].map(m => m[0]);
+    const uniqueEmojis = [...new Set(emojiList)];
+
+    const grid = document.createElement('div');
+    grid.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+        gap: 6px;
+        padding: 12px;
+        max-height: 260px;
+        overflow-y: auto;
+    `;
+
+    uniqueEmojis.forEach(emoji => {
+        const item = document.createElement('div');
+        item.textContent = emoji;
+        item.style.cssText = `
+            font-size: 28px;
+            text-align: center;
+            cursor: pointer;
+            padding: 8px 4px;
+            border-radius: 12px;
+            transition: background 0.15s;
+        `;
+        item.onmouseover = () => { item.style.background = 'var(--border-color)'; };
+        item.onmouseout = () => { item.style.background = ''; };
+        item.onclick = () => {
+            const input = document.getElementById('message-input');
+            if (input) {
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const value = input.value;
+                input.value = value.slice(0, start) + emoji + value.slice(end);
+                input.setSelectionRange(start + emoji.length, start + emoji.length);
+                input.focus();
+            }
+        };
+        grid.appendChild(item);
+    });
+
+    area.appendChild(grid);
+}
 function showPokeTab() {
     const area = document.getElementById('combo-content-area');
     area.innerHTML = '';
