@@ -1990,20 +1990,21 @@ function showModal(modalElement, focusElement = null) {
             };
         }
 
-        function fallbackExport(dataStr, fileName) {
-            fileName = fileName || `chat-backup-${SESSION_ID}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-            const dataBlob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
+    function fallbackExport(dataStr, fileName) {
+        if (typeof exportDataToMobileOrPC === 'function') {
+            exportDataToMobileOrPC(dataStr, fileName);
+        } else {
+            // 旧方法
+            var blob = new Blob([dataStr], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
             showNotification('导出成功', 'success');
         }
+    }
 
         function importChatHistory(file) {
             const reader = new FileReader();
